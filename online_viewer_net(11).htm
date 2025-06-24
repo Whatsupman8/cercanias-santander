@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cercanías Santander</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1.5em;
+      background-color: white;
+      color: #333;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    #logo-renfe {
+      max-width: 180px;
+      margin-bottom: 1em;
+    }
+    h1 {
+      margin: 0 0 1em 0;
+      font-weight: 700;
+      font-size: 1.8rem;
+      text-align: center;
+      color: #82005e; /* morado Renfe */
+    }
+    #selector-dias {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+      margin-bottom: 2em;
+    }
+    #selector-dias button {
+      background-color: #82005e; /* morado Renfe */
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #selector-dias button:hover,
+    #selector-dias button:focus {
+      background-color: #6a004b;
+      outline: none;
+    }
+    #buscador {
+      width: 100%;
+      max-width: 400px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1em;
+    }
+    #buscador p {
+      font-weight: 600;
+      text-align: center;
+      color: #333;
+      margin-bottom: 0.5em;
+    }
+    #buscador input {
+      width: 100%;
+      padding: 0.7em;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      margin-bottom: 1em;
+    }
+    #resultados {
+      width: 100%;
+      max-width: 400px;
+      color: #333;
+      font-size: 1rem;
+      margin-top: 1em;
+      box-sizing: border-box;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5em;
+    }
+    th, td {
+      padding: 0.5em 0.8em;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f0f0;
+      font-weight: normal;
+    }
+    td:first-child {
+      font-weight: 700;
+    }
+    #volver {
+      background-color: #82005e;
+      color: white;
+      border: none;
+      padding: 1em;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 400px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 1em;
+      display: none;
+      box-sizing: border-box;
+    }
+    #volver:hover,
+    #volver:focus {
+      background-color: #6a004b;
+      outline: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      body {
+        padding: 1em;
+      }
+      #logo-renfe {
+        max-width: 140px;
+        margin-bottom: 0.8em;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.8em;
+      }
+      #selector-dias button,
+      #volver {
+        font-size: 1rem;
+        padding: 0.8em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <img id="logo-renfe" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/Logotipo_de_Renfe_Operadora.svg" alt="Logo Renfe" />
+  <h1>Cercanías Santander</h1>
+
+  <div id="selector-dias">
+    <button onclick="cargarHorarios('laborable')">Laborable</button>
+    <button onclick="cargarHorarios('sabado')">Sábado</button>
+    <button onclick="cargarHorarios('festivo')">Domingo / Festivo</button>
+  </div>
+
+  <div id="buscador">
+    <p>Escribe o di el nombre de la estación de destino (por ejemplo: <b>TORRELAVEGA</b>):</p>
+    <input type="text" id="estacion" placeholder="Nombre de estación" autocomplete="off" />
+    <!-- Botón oculto -->
+    <button style="display:none;" onclick="buscarHorarios()">Buscar trenes disponibles</button>
+  </div>
+
+  <button id="volver" onclick="volver()">Volver a selección de día</button>
+
+  <div id="resultados"></div>
+
+  <script>
+    let horarios = {};
+    let estacionesValidas = [];
+    let recognition;
+
+    function cargarHorarios(tipo) {
+      if (tipo === "laborable") {
+        horarios = {
+            "VALDECILLA": [["06:11", "06:13"], ["07:35", "07:37"], ["07:49", "07:51"], ["08:12", "08:14"], ["09:58", "10:00"], ["11:08", "11:10"], ["12:15", "12:17"], ["13:15", "13:17"], ["13:43", "13:44"], ["14:12", "14:14"], ["14:42", "14:44"], ["15:12", "15:14"], ["15:55", "15:57"], ["16:59", "17:01"], ["17:37", "17:39"], ["18:16", "18:18"], ["19:10", "19:12"], ["19:48", "19:50"], ["20:55", "20:57"], ["21:12", "21:14"], ["22:48", "22:50"]],
+  "NUEVA MONTAÑA": [["06:11", "06:15"], ["07:35", "07:39"], ["07:49", "07:53"], ["08:12", "08:16"], ["09:58", "10:02"], ["11:08", "11:12"], ["12:15", "12:19"], ["13:15", "13:19"], ["13:43", "13:46"], ["14:12", "14:16"], ["14:42", "14:46"], ["15:12", "15:16"], ["15:55", "15:59"], ["16:59", "17:03"], ["17:37", "17:41"], ["18:16", "18:20"], ["19:10", "19:14"], ["19:48", "19:52"], ["20:55", "20:59"], ["21:12", "21:16"], ["22:48", "22:52"]],
+  "MURIEDAS": [["06:11", "06:18"], ["07:35", "07:42"], ["07:49", "08:00"], ["08:12", "08:19"], ["09:58", "10:05"], ["11:08", "11:15"], ["12:15", "12:22"], ["13:15", "13:22"], ["13:43", "13:49"], ["14:12", "14:19"], ["14:42", "14:49"], ["15:12", "15:21"], ["15:55", "16:02"], ["16:59", "17:06"], ["17:37", "17:45"], ["18:16", "18:23"], ["19:10", "19:17"], ["19:48", "19:57"], ["20:55", "21:02"], ["21:12", "21:19"], ["22:48", "22:55"]],
+  "MALIAÑO": [["06:11", "06:19"], ["07:35", "07:43"], ["07:49", "08:01"], ["08:12", "08:20"], ["09:58", "10:06"], ["11:08", "11:16"], ["12:15", "12:23"], ["13:15", "13:23"], ["13:43", "13:50"], ["14:12", "14:20"], ["14:42", "14:50"], ["15:12", "15:22"], ["15:55", "16:03"], ["16:59", "17:07"], ["17:37", "17:46"], ["18:16", "18:24"], ["19:10", "19:18"], ["19:48", "19:58"], ["20:55", "21:03"], ["21:12", "21:20"], ["22:48", "22:56"]],
+  "BOO": [["06:11", "06:21"], ["07:35", "07:45"], ["07:49", "08:03"], ["08:12", "08:22"], ["09:58", "10:08"], ["11:08", "11:18"], ["12:15", "12:25"], ["13:15", "13:25"], ["13:43", "13:52"], ["14:12", "14:22"], ["14:42", "14:52"], ["15:12", "15:24"], ["15:55", "16:05"], ["16:59", "17:09"], ["17:37", "17:48"], ["18:16", "18:26"], ["19:10", "19:20"], ["19:48", "20:00"], ["20:55", "21:05"], ["21:12", "21:22"], ["22:48", "22:58"]],
+  "GUARNIZO": [["06:11", "06:24"], ["07:35", "07:50"], ["07:49", "08:06"], ["08:12", "08:29"], ["09:58", "10:13"], ["11:08", "11:21"], ["12:15", "12:28"], ["13:15", "13:32"], ["13:43", "13:55"], ["14:12", "14:28"], ["14:42", "14:55"], ["15:12", "15:27"], ["15:55", "16:08"], ["16:59", "17:15"], ["17:37", "17:56"], ["18:16", "18:29"], ["19:10", "19:23"], ["19:48", "20:03"], ["20:55", "21:11"], ["21:12", "21:25"], ["22:48", "23:01"]],
+  "PARBAYÓN": [["06:11", "06:27"], ["07:35", "07:53"], ["07:49", "08:09"], ["08:12", "08:32"], ["09:58", "10:16"], ["11:08", "11:24"], ["12:15", "12:31"], ["13:15", "13:35"], ["13:43", "13:58"], ["14:12", "14:31"], ["14:42", "14:58"], ["15:12", "15:30"], ["15:55", "16:11"], ["16:59", "17:18"], ["17:37", "17:58"], ["18:16", "18:32"], ["19:10", "19:26"], ["19:48", "20:06"], ["20:55", "21:14"], ["21:12", "21:28"], ["22:48", "23:04"]],
+  "RENEDO": [["06:11", "06:32"], ["07:35", "07:58"], ["07:49", "08:15"], ["08:12", "08:37"], ["09:58", "10:21"], ["11:08", "11:29"], ["12:15", "12:36"], ["13:15", "13:40"], ["13:43", "14:03"], ["14:12", "14:36"], ["14:42", "15:03"], ["15:12", "15:35"], ["15:55", "16:19"], ["16:59", "17:23"], ["17:37", "18:02"], ["18:16", "18:37"], ["19:10", "19:31"], ["19:48", "20:11"], ["20:55", "21:19"], ["21:12", "21:33"], ["22:48", "23:12"]],
+  "VIOÑO": [["07:35", "08:00"], ["08:12", "08:39"], ["09:58", "10:23"], ["12:15", "12:38"], ["13:43", "14:05"], ["14:12", "14:38"], ["14:42", "15:05"], ["15:12", "15:37"], ["15:55", "16:21"], ["16:59", "17:25"], ["18:16", "18:39"], ["19:48", "20:13"], ["20:55", "21:21"], ["22:48", "23:14"]],
+  "ZURITA": [["07:35", "08:03"], ["08:12", "08:42"], ["09:58", "10:26"], ["12:15", "12:41"], ["13:43", "14:08"], ["14:12", "14:41"], ["14:42", "15:08"], ["15:12", "15:40"], ["15:55", "16:24"], ["16:59", "17:28"], ["18:16", "18:42"], ["19:48", "20:16"], ["20:55", "21:24"], ["22:48", "23:17"]],
+  "SIERRAPANDO": [["07:35", "08:06"], ["08:12", "08:45"], ["09:58", "10:29"], ["12:15", "12:44"], ["13:43", "14:11"], ["14:12", "14:44"], ["14:42", "15:11"], ["15:12", "15:43"], ["15:55", "16:27"], ["16:59", "17:31"], ["18:16", "18:45"], ["19:48", "20:19"], ["20:55", "21:27"], ["22:48", "23:20"]],
+  "TORRELAVEGA": [["06:11", "06:47"], ["07:35", "08:09"], ["08:12", "08:48"], ["09:58", "10:32"], ["12:15", "12:50"], ["13:43", "14:14"], ["14:12", "14:50"], ["14:42", "15:14"], ["15:12", "15:46"], ["15:55", "16:30"], ["16:59", "17:41"], ["18:16", "18:48"], ["19:48", "20:22"], ["20:55", "21:38"], ["22:48", "23:23"]],
+  "VIÉRNOLES": [["06:11", "06:49"], ["07:35", "08:11"], ["08:12", "08:50"], ["09:58", "10:34"], ["12:15", "12:52"], ["13:43", "14:16"], ["14:12", "14:52"], ["14:42", "15:16"], ["15:12", "15:48"], ["15:55", "16:32"], ["16:59", "17:43"], ["18:16", "18:50"], ["19:48", "20:24"], ["20:55", "21:39"], ["22:48", "23:25"]],
+  "LAS CALDAS": [["07:35", "08:14"], ["08:12", "08:53"], ["09:58", "10:37"], ["12:15", "12:55"], ["13:43", "14:19"], ["14:12", "14:55"], ["14:42", "15:19"], ["15:12", "15:51"], ["15:55", "16:35"], ["16:59", "17:46"], ["18:16", "18:53"], ["19:48", "20:27"], ["20:55", "21:42"], ["22:48", "23:28"]],
+  "LOMBERA": [["06:11", "06:55"], ["07:35", "08:17"], ["08:12", "08:56"], ["09:58", "10:40"], ["12:15", "12:58"], ["13:43", "14:22"], ["14:12", "14:58"], ["14:42", "15:22"], ["15:12", "15:54"], ["15:55", "16:38"], ["16:59", "17:49"], ["18:16", "18:56"], ["19:48", "20:30"], ["20:55", "21:45"], ["22:48", "23:31"]],
+  "CORRALES": [["06:11", "06:57"], ["07:35", "08:19"], ["08:12", "08:58"], ["09:58", "10:42"], ["12:15", "13:00"], ["13:43", "14:24"], ["14:12", "15:00"], ["14:42", "15:24"], ["15:12", "15:56"], ["15:55", "16:40"], ["16:59", "17:51"], ["18:16", "18:58"], ["19:48", "20:32"], ["20:55", "21:48"], ["22:48", "23:33"]],
+  "FRAGUAS": [["08:12", "09:05"], ["09:58", "10:53"], ["12:15", "13:09"], ["14:12", "15:07"], ["15:12", "16:03"], ["16:59", "18:02"], ["18:16", "19:07"], ["20:55", "21:55"]],
+  "ARENAS": [["08:12", "09:06"], ["09:58", "10:54"], ["12:15", "13:10"], ["14:12", "15:08"], ["15:12", "16:04"], ["16:59", "18:04"], ["18:16", "19:08"], ["20:55", "21:56"]],
+  "SANTA CRUZ": [["08:12", "09:08"], ["09:58", "10:56"], ["12:15", "13:12"], ["14:12", "15:10"], ["15:12", "16:06"], ["16:59", "18:06"], ["18:16", "19:10"], ["20:55", "21:59"]],
+  "MOLLEDO": [["08:12", "09:11"], ["09:58", "10:59"], ["12:15", "13:15"], ["14:12", "15:13"], ["15:12", "16:09"], ["16:59", "18:09"], ["18:16", "19:13"], ["20:55", "22:02"]],
+  "BÁRCENA": [["07:35", "08:34"], ["08:12", "09:14"], ["09:58", "11:02"], ["12:15", "13:18"], ["14:12", "15:16"], ["15:12", "16:12"], ["16:59", "18:11"], ["18:16", "19:16"], ["20:55", "22:05"]],
+  "PUJAYO": [["08:12", "09:21"], ["09:58", "11:18"], ["12:15", "13:25"], ["14:12", "15:23"], ["15:12", "16:19"], ["16:59", "18:18"], ["18:16", "19:23"], ["20:55", "22:12"]],
+  "PESQUERA": [["08:12", "09:31"], ["09:58", "11:28"], ["12:15", "13:35"], ["14:12", "15:33"], ["15:12", "16:29"], ["16:59", "18:28"], ["18:16", "19:33"], ["20:55", "22:22"]],
+  "LANTUENO": [["08:12", "09:34"], ["09:58", "11:31"], ["12:15", "13:38"], ["14:12", "15:36"], ["15:12", "16:32"], ["16:59", "18:31"], ["18:16", "19:36"], ["20:55", "22:29"]],
+  "RIO EBRO": [["08:12", "09:43"], ["09:58", "11:40"], ["12:15", "13:47"], ["14:12", "15:45"], ["15:12", "16:41"], ["16:59", "18:40"], ["18:16", "19:45"], ["20:55", "22:38"]],
+  "REINOSA": [["08:12", "09:45"], ["09:58", "11:42"], ["12:15", "13:49"], ["14:12", "15:47"], ["15:12", "16:43"], ["16:59", "18:42"], ["18:16", "19:47"], ["20:55", "22:40"]],
+        };
+      } else if (tipo === "sabado") {
+        horarios = {
+          // Añade tus horarios sábado aquí
+        };
+      } else if (tipo === "festivo") {
+        horarios = {
+          // Añade tus horarios festivo aquí
+        };
+      }
+
+      estacionesValidas = Object.keys(horarios);
+      if (estacionesValidas.length === 0) {
+        alert("No hay horarios cargados para el tipo seleccionado.");
+        return;
+      }
+
+      document.getElementById("selector-dias").style.display = "none";
+      document.getElementById("buscador").style.display = "flex";
+      document.getElementById("volver").style.display = "block";
+
+      iniciarReconocimientoVoz();
+    }
+
+    function volver() {
+      document.getElementById("selector-dias").style.display = "flex";
+      document.getElementById("buscador").style.display = "none";
+      document.getElementById("resultados").innerHTML = "";
+      document.getElementById("volver").style.display = "none";
+      if (recognition) recognition.stop();
+      document.getElementById("estacion").value = "";
+    }
+
+    function getHoraActual() {
+      const now = new Date();
+      const hh = now.getHours().toString().padStart(2, "0");
+      const mm = now.getMinutes().toString().padStart(2, "0");
+      return `${hh}:${mm}`;
+    }
+
+    function buscarHorarios() {
+      const estacion = document.getElementById("estacion").value.toUpperCase().trim();
+      const ahora = getHoraActual();
+      const resultadosDiv = document.getElementById("resultados");
+      resultadosDiv.innerHTML = "";
+
+      if (!horarios[estacion]) {
+        resultadosDiv.innerHTML = `<p style="color:#cc0000;">La estación "${estacion}" no se encuentra en los datos.</p>`;
+        return;
+      }
+
+      const disponibles = horarios[estacion].filter(([salida]) => salida > ahora);
+
+      if (disponibles.length === 0) {
+        resultadosDiv.innerHTML = `<p>No hay trenes disponibles para hoy desde la hora actual (${ahora}).</p>`;
+        return;
+      }
+
+      let html = `<p>Trenes disponibles desde <b>Santander</b> hacia <b>${estacion}</b> a partir de las <b>${ahora}</b>:</p>`;
+      html += "<table><thead><tr><th>Hora de salida</th><th>Hora de llegada</th></tr></thead><tbody>";
+      disponibles.forEach(([salida, llegada]) => {
+        html += `<tr><td>${salida}</td><td>${llegada}</td></tr>`;
+      });
+      html += "</tbody></table>";
+
+      resultadosDiv.innerHTML = html;
+    }
+
+    function iniciarReconocimientoVoz() {
+      if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+        alert("El reconocimiento de voz no es soportado en este navegador.");
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = "es-ES";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.continuous = true;
+
+      recognition.onresult = function (event) {
+        const transcript = event.results[event.results.length - 1][0].transcript.trim().toUpperCase();
+
+        if (estacionesValidas.includes(transcript)) {
+          document.getElementById("estacion").value = transcript;
+          buscarHorarios();
+        } else {
+          console.log("Estación no reconocida:", transcript);
+        }
+      };
+
+      recognition.onerror = function (event) {
+        console.error("Error en reconocimiento de voz:", event.error);
+      };
+
+      recognition.onend = function () {
+        recognition.start();
+      };
+
+      recognition.start();
+
+      document.getElementById("estacion").addEventListener("keydown", function(event) {
+        if(event.key === "Enter"){
+          buscarHorarios();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
